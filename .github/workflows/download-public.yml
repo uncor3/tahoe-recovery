@@ -1,0 +1,67 @@
+name: Tahoe Public Recovery Image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clone gibMacOS
+        run: |
+          git clone https://github.com/corpnewt/gibMacOS.git
+
+      - name: Download macOS Installer (latest public 26.x)
+        run: |
+          python ./gibMacOS/gibMacOS.py -c publicrelease -v Tahoe -m 26 -o /tmp/Tahoe-public-latest
+
+      - name: Install the assistant
+        run: |
+          sudo installer -pkg /tmp/Tahoe-public-latest/InstallAssistant.pkg -target /
+
+      - name: Generate macOS Installer
+        run: |
+          INSTALLER=$(ls -d /Applications/Install*.app | head -n 1 || true)
+          if [ ! -d "$INSTALLER" ]; then
+            echo "Could not find Install macOS app in /Applications"
+            ls -l /Applications
+            exit 1
+          fi
+
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$INSTALLER/Contents/Info.plist")
+          echo "Detected macOS version: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+          SIZE_MB=$(du -sm "$INSTALLER" | cut -f1)
+
+          # Add 40% headroom and ceil
+          EXTRA=$(echo "($SIZE_MB * 0.4 + 0.999)/1" | bc)
+          TOTAL_MB=$(( SIZE_MB + EXTRA ))
+
+          echo "Installer size: $SIZE_MB MB"
+          echo "Allocating DMG size: $TOTAL_MB MB"
+
+          sudo hdiutil create -o /tmp/Tahoe -size ${TOTAL_MB}m -volname 'Tahoe' -layout SPUD -fs HFS+J
+          sudo hdiutil attach /tmp/Tahoe.dmg -noverify -mountpoint /Volumes/Tahoe
+          sleep 10
+          sudo "$INSTALLER/Contents/Resources/createinstallmedia" --volume /Volumes/Tahoe --nointeraction
+
+          # Detect created installer volume (it always starts with "Install")
+          INSTALL_VOL=$(ls -d /Volumes/Install* | head -n 1 || true)
+          if [ ! -d "$INSTALL_VOL" ]; then
+            echo "Could not find installer volume in /Volumes"
+            ls -l /Volumes
+            exit 1
+          fi
+          echo "Found installer volume: $INSTALL_VOL"
+
+          cp -R "$INSTALL_VOL/BaseSystem" /tmp/BaseSystem
+
+      - name: Upload com.apple.recovery.boot
+        uses: actions/upload-artifact@v4
+        with:
+          name: com.apple.recovery.boot
+          path: /tmp/BaseSystem/*
+          compression-level: 9

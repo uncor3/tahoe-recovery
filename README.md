@@ -8,6 +8,8 @@ I renamed `Generate macOS Tahoe Recovery Image` workflow to `Tahoe Beta 1 Recove
 
 But if you are looking for the latest beta recovery image run `Tahoe Beta (latest) Recovery Image`
 
+For public release `Tahoe Public Recovery Image`
+
 # Why you may need this ?
 
 Without the recovery image, you need to be on macOS to install Tahoe. Since there's no stable release yet, no official recovery images are available either.
@@ -15,7 +17,7 @@ This repo will fetch the full beta installer and zip what you need to have in or
 
 # How to use this ?
 
-Fork this repo and run `Generate macOS Tahoe Recovery Image` worflow.
+Fork this repo and run `Generate macOS Tahoe Recovery Image` worflow for Beta or `Tahoe Public Recovery Image` for Public.
 
 Once done you will have com.apple.recovery.boot.zip artifact
 
@@ -25,7 +27,7 @@ Continue with https://dortania.github.io/OpenCore-Install-Guide/installer-guide/
 
 or if you are on Linux https://dortania.github.io/OpenCore-Install-Guide/installer-guide/linux-install.html
 
-you can skip the Downloading macOS part as this repo will that for you
+you can skip the Downloading macOS part as this repo will do that for you
 
 ## ⚠️ Legal Notice & Disclaimer
 
